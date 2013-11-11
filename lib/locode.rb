@@ -88,13 +88,11 @@ module Locode
   # Returns an Array of Location because the name might not be unique
   def self.find_by_name(search_string)
     return [] unless search_string && search_string.is_a?(String)
+    normalised_search = search_string.strip
+    normalised_search.downcase!
+
     ALL_LOCATIONS.select do |location|
-      names = []
-      names << location.full_name if location.full_name
-      names << location.full_name_without_diacritics if location.full_name_without_diacritics
-      names += location.alternative_full_names
-      names += location.alternative_full_names_without_diacritics
-      names.map { |name| name.downcase }.any? { |name| name.start_with?(search_string.strip.downcase) }
+      location.downcase_names.any? { |name| name.start_with?(normalised_search) }
     end
   end
 
