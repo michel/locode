@@ -359,6 +359,25 @@ module Locode
       country_code && country_code.size == 2 && city_code && city_code.size == 3
     end
 
+
+    # Public: returns an array of all possible names of the location downcased
+    #
+    # Examples
+    #
+    #   Locode.find_by_locode('US NYC').first.downcase_names
+    #   #=> [ 'new york', ...]
+    #
+    # Returns array of downcased strings representing all possible name values of location
+    def downcase_names
+      names = []
+      names << full_name.downcase if full_name
+      names << full_name_without_diacritics.downcase if full_name_without_diacritics
+
+      names += alternative_full_names.map{|n| n.downcase }
+      names += alternative_full_names_without_diacritics.map{|n| n.downcase }
+      return names
+    end
+
     private
 
     # Internal: sets the ISO 3166 alpha-2 Country Code

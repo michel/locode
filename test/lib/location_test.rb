@@ -81,4 +81,28 @@ describe Locode::Location do
       hash[:coordinates].must_equal location.coordinates
     end
   end
+
+  describe 'downcase_names' do
+    before(:each) do
+      @location = Locode::Location.new full_name: 'Full_Name', full_name_without_diacritics: 'Full_name_without_Diacritics'
+      @location.alternative_full_names = 'Alternative_full_Names'
+      @location.alternative_full_names_without_diacritics = 'Alternative_full_names_without_Diacritics'
+    end
+
+    it 'should include the full name' do
+      @location.downcase_names.must_include 'full_name'
+    end
+
+    it 'should include the full name without diacritics' do
+      @location.downcase_names.must_include 'full_name_without_diacritics'
+    end
+
+    it 'should include the alternative full name' do
+      @location.downcase_names.must_include 'alternative_full_names'
+    end
+
+    it 'should include the alternative full name without diacritics' do
+      @location.downcase_names.must_include 'alternative_full_names_without_diacritics'
+    end
+  end
 end
