@@ -10,6 +10,7 @@ module Locode
   def self.load_data
     YAML.load(File.read(File.expand_path('../../data/yaml/dump.yml', __FILE__)))
   end
+
   private_class_method :load_data
 
   ALL_LOCATIONS = load_data
@@ -113,5 +114,31 @@ module Locode
     return [] unless function.to_s =~ /^[1-7]{1}|:B{1}$/
 
     ALL_LOCATIONS.select { |location| location.country_code == country_code && location.function_classifier.include?(function) }.take(limit)
+  end
+
+  # Public: Find locations whose full name or full name without diacritics
+  #         matches the search string scoped by country
+  #
+  # country_code - ISO 3166 alpha-2 Country Code String to filter locations by country
+  # search_string - The string that will be used in the LOCODE search.
+  # limit - Integer to specify how many locations you want
+  #
+  # Examples
+  #
+  #   Locode.find_by_country_and_function('BE', 1)
+  #   #=> [<Locode::Location: 'BE ANR'>, ..]
+  #
+  # Returns an Array of Locations that satisfy the above conditions
+  def self.find_by_country_and_name(country_code, search_string, limit = ALL_LOCATIONS.size)
+    return [] unless country_code.to_s =~ /^[A-Z]{2}$/
+    return [] unless search_string.is_a?(String)
+    normalised_search_string = search_string.strip
+    normalised_search_string.downcase!
+
+    country_locations = ALL_LOCATIONS.select { |location| location.country_code == country_code }
+
+    country_locations.select do |location|
+      location.downcase_names.any? { |name| name.start_with?(normalised_search_string) }
+    end.take(limit)
   end
 end

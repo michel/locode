@@ -14,7 +14,6 @@ describe Locode do
     it 'should find the location for a given name' do
       name = 'Hamburg'
       location = Locode.find_by_name(name).first
-
       location.full_name.must_equal name
     end
   end
@@ -96,6 +95,90 @@ describe Locode do
             locations.count.must_equal limit
           end
         end
+      end
+    end
+
+  end
+
+  describe 'find city scoped by country' do
+
+    describe 'invalid calls' do
+      it 'returns an empty array when country code is empty' do
+        Locode.find_by_country_and_name(nil, 1).must_be_empty
+      end
+
+      it 'returns an empty array when country code is not a string' do
+        Locode.find_by_country_and_name(12, 1).must_be_empty
+      end
+
+      it 'returns an empty array when country code is not 2 chars long' do
+        Locode.find_by_country_and_name('ABC', 1).must_be_empty
+        Locode.find_by_country_and_name('A', 1).must_be_empty
+      end
+
+      it 'returns an empty array when country code is not in upper case' do
+        Locode.find_by_country_and_name('aa', 1).must_be_empty
+        Locode.find_by_country_and_name('a', 1).must_be_empty
+      end
+
+      it 'returns an empty array when search string is not a string' do
+        Locode.find_by_country_and_name('AB', 9).must_be_empty
+        Locode.find_by_country_and_name('AB', nil).must_be_empty
+        Locode.find_by_country_and_name('AB', :test).must_be_empty
+        Locode.find_by_country_and_name('AB', 1.0).must_be_empty
+      end
+    end
+
+    describe 'valid calls' do
+      let(:antwerp) { create_location 'BE', 'Antwerp' }
+      let(:brussels) { create_location 'BE', 'Brussels' }
+      let(:venlo) { create_location 'NL', 'Venlo' }
+      let(:locations) { [] }
+
+      before(:each) do
+        Locode.const_set :ALL_LOCATIONS, locations
+      end
+
+      describe 'without limit' do
+        before(:each) do
+          locations << antwerp << brussels << venlo
+        end
+
+        it 'finds all locations for Belgium as seaport' do
+          locations = Locode.find_by_country_and_name('BE', 'Antwerp')
+          locations.count.must_equal 1
+          locations.must_include antwerp
+          locations.wont_include brussels
+          locations.wont_include venlo
+        end
+
+        it 'finds all railstations in the Netherlands' do
+          locations = Locode.find_by_country_and_name('NL', 'V')
+          locations.count.must_equal 1
+          locations.must_include venlo
+          locations.wont_include brussels
+          locations.wont_include antwerp
+        end
+      end
+
+      describe 'with limit' do
+        before(:each) do
+          locations << venlo << venlo << venlo
+        end
+
+        [1, 2].each do |limit|
+          it "returns array with the #{limit} location" do
+            locations = Locode.find_by_country_and_name('NL', 'Ven', limit)
+            locations.count.must_equal limit
+          end
+        end
+      end
+
+      def create_location(country, name)
+        location = Locode::Location.new country_code: country, full_name: name, full_name_without_diacritics: name
+        location.alternative_full_names = [name]
+        location.alternative_full_names_without_diacritics = [name]
+        return location
       end
     end
   end
