@@ -120,7 +120,7 @@ module Locode
   #         matches the search string scoped by country
   #
   # country_code - ISO 3166 alpha-2 Country Code String to filter locations by country
-  # search_string - The string that will be used in the LOCODE search.
+  # function - Integer or :B that specifies the function of the location
   # limit - Integer to specify how many locations you want
   #
   # Examples
@@ -139,6 +139,29 @@ module Locode
 
     country_locations.select do |location|
       location.downcase_names.any? { |name| name.start_with?(normalised_search_string) }
+    end.take(limit)
+  end
+
+  # Public: Find locations by function identifier
+  #
+  # search_string - The string that will be used in the LOCODE search.
+  # function - Integer or :B that specifies the function of the location
+  # limit - Integer to specify how many locations you want
+  #
+  #   Locode.find_by_name_and_function('Göteborg',1,1)
+  #   #=> [<Locode::Location: 'SE GOT'>]
+  #
+  # Returns an Array of Location because the name might not be unique
+  def self.find_by_name_and_function(search_string, function, limit = ALL_LOCATIONS.size)
+    return [] unless search_string.is_a?(String)
+    return [] unless function.to_s =~ /^[1-7]{1}|:B{1}$/
+
+    normalised_search = search_string.strip
+    normalised_search.downcase!
+
+    ALL_LOCATIONS.select do |location|
+      location.function_classifier.include?(function) &&
+          location.downcase_names.any? { |name| name.start_with?(normalised_search) }
     end.take(limit)
   end
 end

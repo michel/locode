@@ -182,4 +182,69 @@ describe Locode do
       end
     end
   end
+
+  describe 'find locations by name for function' do
+
+    describe 'invalid calls' do
+      it 'returns an empty array when search string is empty' do
+        Locode.find_by_name_and_function(nil, 1).must_be_empty
+      end
+
+      it 'returns an empty array when search string is not a string' do
+        Locode.find_by_name_and_function(12, 1).must_be_empty
+      end
+
+      it 'returns an empty array when function is not a possible function' do
+        Locode.find_by_name_and_function('AB', 9).must_be_empty
+        Locode.find_by_name_and_function('AB', 0).must_be_empty
+        Locode.find_by_name_and_function('AB', nil).must_be_empty
+        Locode.find_by_name_and_function('AB', ':C').must_be_empty
+        Locode.find_by_name_and_function('AB', ':b').must_be_empty
+      end
+    end
+
+    describe 'valid calls' do
+      let(:antwerp) { create_location 'BE', 'Antwerp'}
+      let(:brussels) { create_location 'BE', 'Brussels' }
+      let(:venlo) { create_location 'NL', 'Venlo'}
+      let(:locations) { [] }
+
+      before(:each) do
+        Locode.const_set :ALL_LOCATIONS, locations
+      end
+
+      describe 'without limit' do
+        before(:each) do
+          locations << antwerp << brussels << venlo
+        end
+
+        it 'finds all locations for Antwerp as seaport' do
+          locations = Locode.find_by_name_and_function('Antwerp', 1)
+          locations.count.must_equal 1
+          locations.must_include antwerp
+          locations.wont_include brussels
+          locations.wont_include venlo
+        end
+
+
+        it 'filters on function identifier' do
+          locations = Locode.find_by_name_and_function('Antwerp', 2)
+          locations.count.must_equal 0
+          locations = Locode.find_by_name_and_function('Antwerp', 1)
+          locations.count.must_equal 1
+        end
+
+
+      end
+    end
+
+    def create_location(country, name, function = 1)
+      location = Locode::Location.new country_code: country, full_name: name, full_name_without_diacritics: name, function_classifier: [function]
+      location.alternative_full_names = [name]
+      location.alternative_full_names_without_diacritics = [name]
+      return location
+    end
+
+  end
 end
+
